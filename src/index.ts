@@ -81,10 +81,20 @@ const DEFAULT_PRIORITY = 1;
  * @see {@link Subscribe} the decorator to subscribe with
  */
 export default class EventBus<Events extends EventDict> {
+  /**
+   * All listeners registered to this event bus.
+   * @private
+   */
   private listeners: Partial<{
     [K in keyof Events]: Array<HandlerEntry<Events[K]>>;
   }> = {};
 
+  /**
+   *
+   * @param event the event to listen to
+   * @param listener the callback
+   * @param priority the priority of the listener (higher first)
+   */
   on<K extends keyof Events>(
     event: K,
     listener: Events[K] extends void
@@ -98,6 +108,12 @@ export default class EventBus<Events extends EventDict> {
     this.listeners[event]?.sort((a, b) => b.priority - a.priority);
   }
 
+  /**
+   * Runs an event callback once, then removes the listener.
+   * @param event the event to listen to
+   * @param listener the callback
+   * @param priority the priority of the listener (higher first)
+   */
   once<K extends keyof Events>(
     event: K,
     listener: Events[K] extends void
@@ -111,6 +127,13 @@ export default class EventBus<Events extends EventDict> {
     }) as Events[K] extends void ? () => void : (payload: Events[K]) => void;
     this.on(event, handler, priority);
   }
+
+  /**
+   * Runs an event callback until it returns `true`, then removes the listener.
+   * @param event the event to listen to
+   * @param listener the callback
+   * @param priority the priority of the listener (higher first)
+   */
   onceB<K extends keyof Events>(
     event: K,
     listener: Events[K] extends void
@@ -125,6 +148,11 @@ export default class EventBus<Events extends EventDict> {
     this.on(event, handler, priority);
   }
 
+  /**
+   * Stop listening to an event.
+   * @param event the event to stop listening to
+   * @param listener the callback to remove
+   */
   off<K extends keyof Events>(
     event: K,
     listener: Events[K] extends void
@@ -142,6 +170,11 @@ export default class EventBus<Events extends EventDict> {
     }
   }
 
+  /**
+   * Emit an event.
+   * @param event the event to emit
+   * @param payload the payload to pass to the listeners
+   */
   emit<K extends keyof Events>(
     event: K,
     ...payload: Events[K] extends void ? [] : [Events[K]]
@@ -157,7 +190,11 @@ export default class EventBus<Events extends EventDict> {
     }
   }
 
-  registerSubscriber<T>(instance: T): void {
+  /**
+   * Register an object as a subscriber.
+   * @param instance the object to register
+   */
+  registerSubscriber<T extends object>(instance: T): void {
     const proto = instance as AdditionalProperties<Events>;
     const subscriptions: Subscription<Events>[] = proto.__subscriptions;
     if (!subscriptions) return;
@@ -179,7 +216,11 @@ export default class EventBus<Events extends EventDict> {
     }
   }
 
-  unregisterSubscriber<T>(instance: T): void {
+  /**
+   * Unregister an object as a subscriber.
+   * @param instance the object to unregister
+   */
+  unregisterSubscriber<T extends object>(instance: T): void {
     const inst = instance as AdditionalProperties<Events>;
     const handlers = inst.__handlers;
     if (!handlers) return;
