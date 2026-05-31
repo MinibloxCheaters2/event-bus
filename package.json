@@ -2,8 +2,8 @@
   "name": "@wq2/event-bus",
   "description": "An Event Bus in TypeScript, resembling Google's EventBus and other Java event buses.",
   "license": "AGPL-3.0-or-later",
-  "version": "0.0.3",
-  "module": "index.ts",
+  "version": "0.0.4",
+  "main": "dist/index.js",
   "type": "module",
   "readme": "ReadME.md",
   "publishConfig": {
