@@ -5,6 +5,10 @@
   "version": "0.0.0",
   "module": "index.ts",
   "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MinibloxCheaters2/event-bus.git"
