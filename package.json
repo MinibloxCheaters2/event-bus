@@ -5,6 +5,14 @@
   "version": "0.0.0",
   "module": "index.ts",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MinibloxCheaters2/event-bus.git"
+  },
+  "homepage": "https://github.com/MinibloxCheaters2/event-bus",
+  "bugs": {
+    "url": "https://github.com/MinibloxCheaters2/event-bus/issues"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown -w"
