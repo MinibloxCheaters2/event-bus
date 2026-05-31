@@ -52,6 +52,12 @@
    }
  }
  ```
+ ## Emitting events
+
+ Just call `EventBus#emit` with the event name and payload:
+ ```ts
+ bus.emit("event", ...);
+ ```
  @module
  */
 
