@@ -1,35 +1,40 @@
 {
-  "name": "@wq2/event-bus",
-  "description": "An Event Bus in TypeScript, resembling Google's EventBus and other Java event buses.",
-  "license": "AGPL-3.0-or-later",
-  "version": "0.0.5",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "readme": "ReadME.md",
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
-  "files": [
-    "dist/*",
-    "ReadME.md",
-    "LICENSE"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MinibloxCheaters2/event-bus.git"
-  },
-  "homepage": "https://github.com/MinibloxCheaters2/event-bus",
-  "bugs": {
-    "url": "https://github.com/MinibloxCheaters2/event-bus/issues"
-  },
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown -w",
-    "prepublishOnly": "bun run build"
-  },
-  "devDependencies": {
-    "tsdown": "^0.22.1"
-  }
+	"name": "@wq2/event-bus",
+	"version": "0.0.5",
+	"description": "An Event Bus in TypeScript, resembling Google's EventBus and other Java event buses.",
+	"homepage": "https://github.com/MinibloxCheaters2/event-bus",
+	"bugs": {
+		"url": "https://github.com/MinibloxCheaters2/event-bus/issues"
+	},
+	"license": "AGPL-3.0-or-later",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/MinibloxCheaters2/event-bus.git"
+	},
+	"files": [
+		"dist/*",
+		"ReadME.md",
+		"LICENSE"
+	],
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown -w",
+		"prepublishOnly": "bun run build",
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
+		"fmt": "oxfmt"
+	},
+	"devDependencies": {
+		"oxfmt": "^0.64.0",
+		"oxlint": "^1.79.0",
+		"tsdown": "^0.22.1"
+	},
+	"readme": "ReadME.md"
 }

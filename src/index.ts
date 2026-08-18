@@ -67,16 +67,21 @@
 export type EventDict = Record<string, unknown>;
 
 interface HandlerEntry<E = unknown> {
-  handler: (payload: E) => void;
-  priority: number;
+	handler: (payload: E) => void;
+	priority: number;
 }
 
+interface Subscription<E> {
+	event: keyof E;
+	method: string;
+	priority?: number;
+}
 interface AdditionalProperties<T extends EventDict> {
-  __handlers: {
-    event: PropertyKey;
-    handler: (value: unknown) => void;
-  }[];
-  __subscriptions: Subscription<T>[];
+	__handlers: {
+		event: PropertyKey;
+		handler: (value: unknown) => void;
+	}[];
+	__subscriptions: Subscription<T>[];
 }
 
 const DEFAULT_PRIORITY = 1;
@@ -87,193 +92,199 @@ const DEFAULT_PRIORITY = 1;
  * @see {@link Subscribe} the decorator to subscribe with
  */
 export default class EventBus<Events extends EventDict> {
-  /**
-   * All listeners registered to this event bus.
-   * @private
-   */
-  private listeners: Partial<{
-    [K in keyof Events]: Array<HandlerEntry<Events[K]>>;
-  }> = {};
+	/**
+	 * All listeners registered to this event bus.
+	 * @private
+	 */
+	private listeners: Partial<{
+		[K in keyof Events]: Array<HandlerEntry<Events[K]>>;
+	}> = {};
 
-  /**
-   *
-   * @param event the event to listen to
-   * @param listener the callback
-   * @param priority the priority of the listener (higher first)
-   */
-  on<K extends keyof Events>(
-    event: K,
-    listener: Events[K] extends void
-      ? () => void
-      : (payload: Events[K]) => void,
-    priority: number = DEFAULT_PRIORITY,
-  ): void {
-    this.listeners[event] ??= [];
-    this.listeners[event]?.push({ handler: listener, priority });
-    // higher priority first
-    this.listeners[event]?.sort((a, b) => b.priority - a.priority);
-  }
+	/**
+	 *
+	 * @param event the event to listen to
+	 * @param listener the callback
+	 * @param priority the priority of the listener (higher first)
+	 */
+	on<K extends keyof Events>(
+		event: K,
+		listener: Events[K] extends void ? () => void : (payload: Events[K]) => void,
+		priority: number = DEFAULT_PRIORITY,
+	): void {
+		this.listeners[event] ??= [];
+		this.listeners[event]?.push({ handler: listener, priority });
+		// higher priority first
+		this.listeners[event]?.sort((a, b) => b.priority - a.priority);
+	}
 
-  /**
-   * Runs an event callback once, then removes the listener.
-   * @param event the event to listen to
-   * @param listener the callback
-   * @param priority the priority of the listener (higher first)
-   */
-  once<K extends keyof Events>(
-    event: K,
-    listener: Events[K] extends void
-      ? () => void
-      : (payload: Events[K]) => void,
-    priority: number = DEFAULT_PRIORITY,
-  ): void {
-    const handler = ((payload: Events[K]) => {
-      listener(payload);
-      this.off(event, handler);
-    }) as Events[K] extends void ? () => void : (payload: Events[K]) => void;
-    this.on(event, handler, priority);
-  }
+	/**
+	 * Runs an event callback once, then removes the listener.
+	 * @param event the event to listen to
+	 * @param listener the callback
+	 * @param priority the priority of the listener (higher first)
+	 */
+	once<K extends keyof Events>(
+		event: K,
+		listener: Events[K] extends void ? () => void : (payload: Events[K]) => void,
+		priority: number = DEFAULT_PRIORITY,
+	): void {
+		const handler = ((payload: Events[K]) => {
+			listener(payload);
+			this.off(event, handler);
+		}) as Events[K] extends void ? () => void : (payload: Events[K]) => void;
+		this.on(event, handler, priority);
+	}
 
-  /**
-   * Runs an event callback until it returns `true`, then removes the listener.
-   * @param event the event to listen to
-   * @param listener the callback
-   * @param priority the priority of the listener (higher first)
-   */
-  onceB<K extends keyof Events>(
-    event: K,
-    listener: Events[K] extends void
-      ? () => boolean
-      : (payload: Events[K]) => boolean,
-    priority: number = DEFAULT_PRIORITY,
-  ): void {
-    const handler = ((payload: Events[K]) => {
-      const r = listener(payload);
-      if (r) this.off(event, handler);
-    }) as Events[K] extends void ? () => void : (payload: Events[K]) => void;
-    this.on(event, handler, priority);
-  }
+	/**
+	 * Runs an event callback until it returns `true`, then removes the listener.
+	 * @param event the event to listen to
+	 * @param listener the callback
+	 * @param priority the priority of the listener (higher first)
+	 */
+	onceB<K extends keyof Events>(
+		event: K,
+		listener: Events[K] extends void ? () => boolean : (payload: Events[K]) => boolean,
+		priority: number = DEFAULT_PRIORITY,
+	): void {
+		const handler = ((payload: Events[K]) => {
+			const r = listener(payload);
+			if (r) this.off(event, handler);
+		}) as Events[K] extends void ? () => void : (payload: Events[K]) => void;
+		this.on(event, handler, priority);
+	}
 
-  /**
-   * Stop listening to an event.
-   * @param event the event to stop listening to
-   * @param listener the callback to remove
-   */
-  off<K extends keyof Events>(
-    event: K,
-    listener: Events[K] extends void
-      ? () => void
-      : (payload: Events[K]) => void,
-  ): void {
-    const handlers = this.listeners[event];
-    if (handlers) {
-      this.listeners[event] = handlers.filter(
-        (entry) => entry.handler !== listener,
-      );
-      if (this.listeners[event]?.length === 0) {
-        delete this.listeners[event];
-      }
-    }
-  }
+	/**
+	 * Stop listening to an event.
+	 * @param event the event to stop listening to
+	 * @param listener the callback to remove
+	 */
+	off<K extends keyof Events>(
+		event: K,
+		listener: Events[K] extends void ? () => void : (payload: Events[K]) => void,
+	): void {
+		const handlers = this.listeners[event];
+		if (handlers) {
+			this.listeners[event] = handlers.filter((entry) => entry.handler !== listener);
+			if (this.listeners[event]?.length === 0) {
+				delete this.listeners[event];
+			}
+		}
+	}
 
-  /**
-   * Emit an event.
-   * @param event the event to emit
-   * @param payload the payload to pass to the listeners
-   */
-  emit<K extends keyof Events>(
-    event: K,
-    ...payload: Events[K] extends void ? [] : [Events[K]]
-  ): void {
-    const handlers = this.listeners[event];
-    if (!handlers) return;
-    for (const { handler } of handlers) {
-      if (payload?.[0]) {
-        handler(payload[0]);
-      } else {
-        (handler as () => void)();
-      }
-    }
-  }
+	/**
+	 * Emit an event.
+	 * @param event the event to emit
+	 * @param payload the payload to pass to the listeners
+	 */
+	emit<K extends keyof Events>(
+		event: K,
+		...payload: Events[K] extends void ? [] : [Events[K]]
+	): void {
+		const handlers = this.listeners[event];
+		if (!handlers) return;
+		for (const { handler } of handlers) {
+			if (payload?.[0]) {
+				handler(payload[0]);
+			} else {
+				(handler as () => void)();
+			}
+		}
+	}
 
-  /**
-   * Register an object as a subscriber.
-   * @param instance the object to register
-   */
-  registerSubscriber<T extends object>(instance: T): void {
-    const proto = instance as AdditionalProperties<Events>;
-    const subscriptions: Subscription<Events>[] = proto.__subscriptions;
-    if (!subscriptions) return;
-    for (const sub of subscriptions) {
-      const handler = (instance as { [k: typeof sub.method]: () => void })[
-        sub.method
-      ]!.bind(instance);
-      const inst = instance as AdditionalProperties<Events>;
-      inst.__handlers ??= [];
-      inst.__handlers.push({
-        event: sub.event,
-        handler,
-      });
-      this.on(
-        sub.event as keyof Events,
-        handler,
-        sub.priority ?? DEFAULT_PRIORITY,
-      );
-    }
-  }
+	/**
+	 * Register an object as a subscriber.
+	 * @param instance the object to register
+	 */
+	registerSubscriber<T extends object>(instance: T): void {
+		const proto = instance as AdditionalProperties<Events>;
+		const subscriptions: Subscription<Events>[] = proto.__subscriptions;
+		if (!subscriptions) return;
+		for (const sub of subscriptions) {
+			const handler = (instance as { [k: typeof sub.method]: () => void })[sub.method]!.bind(
+				instance,
+			);
+			const inst = instance as AdditionalProperties<Events>;
+			inst.__handlers ??= [];
+			inst.__handlers.push({
+				event: sub.event,
+				handler,
+			});
+			this.on(sub.event as keyof Events, handler, sub.priority ?? DEFAULT_PRIORITY);
+		}
+	}
 
-  /**
-   * Unregister an object as a subscriber.
-   * @param instance the object to unregister
-   */
-  unregisterSubscriber<T extends object>(instance: T): void {
-    const inst = instance as AdditionalProperties<Events>;
-    const handlers = inst.__handlers;
-    if (!handlers) return;
-    for (const { event, handler } of handlers) {
-      //@ts-expect-error: lazy
-      this.off(event as keyof Events, handler);
-    }
-    inst.__handlers = [];
-  }
+	/**
+	 * Unregister an object as a subscriber.
+	 * @param instance the object to unregister
+	 */
+	unregisterSubscriber<T extends object>(instance: T): void {
+		const inst = instance as AdditionalProperties<Events>;
+		const handlers = inst.__handlers;
+		if (!handlers) return;
+		for (const { event, handler } of handlers) {
+			//@ts-expect-error: lazy
+			this.off(event as keyof Events, handler);
+		}
+		inst.__handlers = [];
+	}
+
+	/**
+	 * Subscribe/Handle an event.
+	 * @param event name of the event to handle/subscribe to
+	 * @param priority priority of the subscription, determines the order in which handlers are called.
+	 * @returns decorator function
+	 */
+	Subscribe<K extends keyof Events>(
+		event: K,
+		priority: number = DEFAULT_PRIORITY,
+	): <A extends Events[K] = Events[K]>(
+		_target: unknown,
+		mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
+			name: string;
+		},
+	) => void {
+		return <A extends Events[K] = Events[K]>(
+			_target: unknown,
+			mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
+				name: string;
+			},
+		) => {
+			mdc.addInitializer(function () {
+				const t = this as AdditionalProperties<Events>;
+				t.__subscriptions ??= [];
+				const subscriptions: Subscription<Events>[] = t.__subscriptions;
+				subscriptions.push({ event, method: mdc.name, priority });
+			});
+		};
+	}
 }
-
-interface Subscription<E> {
-  event: keyof E;
-  method: string;
-  priority?: number;
-}
-
 /**
  * Subscribe/Handle an event.
  * @param event name of the event to handle/subscribe to
  * @param priority priority of the subscription, determines the order in which handlers are called.
+ * @deprecated use {@link EventBus#Subscribe Bus.Subscribe} instead. It provides validation, this'll be removed in the next release.
  * @returns decorator function
  */
 export function Subscribe<E extends EventDict, K extends keyof E>(
-  event: K,
-  priority: number = DEFAULT_PRIORITY,
+	event: K,
+	priority: number = DEFAULT_PRIORITY,
 ): <A extends E[K] = E[K]>(
-  _target: unknown,
-  mdc: ClassMethodDecoratorContext<
-    unknown,
-    A extends void ? () => void : (e: A) => void
-  > & {
-    name: string;
-  },
+	_target: unknown,
+	mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
+		name: string;
+	},
 ) => void {
-  return <A extends E[K] = E[K]>(
-    _target: unknown,
-    mdc: ClassMethodDecoratorContext<
-      unknown,
-      A extends void ? () => void : (e: A) => void
-    > & { name: string },
-  ) => {
-    mdc.addInitializer(function () {
-      const t = this as AdditionalProperties<E>;
-      t.__subscriptions ??= [];
-      const subscriptions: Subscription<E>[] = t.__subscriptions;
-      subscriptions.push({ event, method: mdc.name, priority });
-    });
-  };
+	return <A extends E[K] = E[K]>(
+		_target: unknown,
+		mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
+			name: string;
+		},
+	) => {
+		mdc.addInitializer(function () {
+			const t = this as AdditionalProperties<E>;
+			t.__subscriptions ??= [];
+			const subscriptions: Subscription<E>[] = t.__subscriptions;
+			subscriptions.push({ event, method: mdc.name, priority });
+		});
+	};
 }
