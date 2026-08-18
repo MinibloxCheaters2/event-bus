@@ -258,33 +258,3 @@ export default class EventBus<Events extends EventDict> {
 		};
 	}
 }
-/**
- * Subscribe/Handle an event.
- * @param event name of the event to handle/subscribe to
- * @param priority priority of the subscription, determines the order in which handlers are called.
- * @deprecated use {@link EventBus#Subscribe Bus.Subscribe} instead. It provides validation, this'll be removed in the next release.
- * @returns decorator function
- */
-export function Subscribe<E extends EventDict, K extends keyof E>(
-	event: K,
-	priority: number = DEFAULT_PRIORITY,
-): <A extends E[K] = E[K]>(
-	_target: unknown,
-	mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
-		name: string;
-	},
-) => void {
-	return <A extends E[K] = E[K]>(
-		_target: unknown,
-		mdc: ClassMethodDecoratorContext<unknown, A extends void ? () => void : (e: A) => void> & {
-			name: string;
-		},
-	) => {
-		mdc.addInitializer(function () {
-			const t = this as AdditionalProperties<E>;
-			t.__subscriptions ??= [];
-			const subscriptions: Subscription<E>[] = t.__subscriptions;
-			subscriptions.push({ event, method: mdc.name, priority });
-		});
-	};
-}
